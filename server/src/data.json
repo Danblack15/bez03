@@ -1,1 +1,1 @@
-[{"username":"ADMIN","password":""},{"username":"Petr","password":"dkenm3","block":false},{"username":"Иван","password":"","block":false},{"username":"Николай","password":"132","block":false}]
+[{"username":"ADMIN","password":"123"},{"username":"Константин","password":"123wR*","block":false,"options":{"lowercase":false,"uppercase":true,"numbers":true,"special":true}},{"username":"John Newman","password":"","block":false,"options":{"lowercase":true,"uppercase":false,"numbers":true,"special":false}}]

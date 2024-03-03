@@ -4,7 +4,13 @@ export const saveNewUser = async (username, password) => {
     const newUserData = {
         username: username,
         password: password,
-        block: false
+        block: false,
+        options: {
+            lowercase: false,
+            uppercase: false,
+            numbers: false,
+            special: false
+        }
     };
 
     const filePath = 'src/data.json';

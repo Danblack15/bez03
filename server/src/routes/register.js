@@ -5,9 +5,9 @@ import { saveNewUser } from '../utils/saveNewUser';
 
 registerRouter.post('/', async (req, res) => {
     try {
-        const { username, password } = req.body;
+        const { username } = req.body;
 
-        await saveNewUser(username, password);
+        await saveNewUser(username, '');
 
         res.json({
             status: 'ok',

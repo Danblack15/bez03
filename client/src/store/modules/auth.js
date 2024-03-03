@@ -6,7 +6,8 @@ export const Auth = {
     state: () => ({
         account: Cookies.get('account') ? Cookies.get('account') : {},
         token: Cookies.get('token') ? Cookies.get('token') : {},
-        isAdmin: Cookies.get('account') ? JSON.parse(Cookies.get('account')).username === 'ADMIN' : false
+        isAdmin: Cookies.get('account') ? JSON.parse(Cookies.get('account')).username === 'ADMIN' : false,
+        delay: localStorage.delay ? localStorage.delay : null
     }),
 
     getters: {
@@ -31,27 +32,57 @@ export const Auth = {
         setToken(state, data) {
             state.token = data;
         },
+
+        setDelay(state) {
+            const diff = 10;
+
+            state.delay = new Date(new Date().getTime() + diff*60000);
+            localStorage.delay = state.delay;
+        }
     },
 
     actions: {
-        async login({ commit }, data) {
+        async login({ state, commit }, data) {
+            if (state.delay) {
+                let hourDiff = new Date(state.delay).getTime() - new Date().getTime();
+                let minDiff = Math.ceil(hourDiff / 60 / 1000);
+
+                commit('setHint', `Временная блокировка: ${minDiff} мин.`, { root: true });
+
+                return;
+            };
+            
             try {
-                // commit('setLoading', true, { root: true });
                 const res = await api.post('auth', data /* {username: '', password: ''} */);
 
                 if (res.data.status !== 'ok') {
-                    // commit('setLoading', false, { root: true });
-                    // commit('setHint', res.data.msg, { root: true });
+                    commit('setHint', res.data.request.responseText, { root: true });
                     return;
                 }
 
                 Cookies.set('account', JSON.stringify(res.data.user));
                 Cookies.set('token', res.data.token);
 
-                // commit('setLoading', false, { root: true });
                 router.push('/explore');
+
+                localStorage.removeItem('stepOfDelay');
+                localStorage.removeItem('delay');
+                
             } catch (error) {
-                // commit('setLoading', false, { root: true });
+                if (error.response.status === 401) {
+                    const stepOfDelayLocal = Number(localStorage.stepOfDelay) || 0;
+
+                    if (stepOfDelayLocal < 2)
+                        localStorage.stepOfDelay = stepOfDelayLocal + 1;
+                    else {
+                        commit('setHint', error.response.data, { root: true });
+                        commit('setDelay');
+                    }
+                }
+
+                if (!state.delay)
+                    commit('setHint', error.response.data, { root: true });
+
                 console.log(error);
             }
         },

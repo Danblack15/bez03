@@ -15,10 +15,13 @@ authRouter.post('/', async (req, res) => {
         const existUser = await findUser(username);
         
         if (!existUser)
-            return res.sendStatus(404);
+            return res.status(404).send('Пользователь не найден');
 
-        if (existUser.password !== password || existUser.block)
-            return res.sendStatus(401);
+        if (existUser.block)
+            return res.status(403).send('Пользователь заблокирован');
+
+        if (existUser.password !== password)
+            return res.status(401).send('Неверный пароль');
 
         const token = jwt.sign({ existUser }, jwtSecret, {
             algorithm: "HS256",
@@ -40,8 +43,14 @@ authRouter.post('/', async (req, res) => {
 
 authRouter.get('/:username', async (req, res) => {
     try {
+        let token = req.headers.authorization;
+
+        token = token.split(' ')[1];
+
+        const payload = jwt.verify(token, jwtSecret);
+
         const { username } = req.params;
-        console.log(username);
+
         const existUser = await findUser(username);
         
         if (!existUser)
@@ -56,6 +65,9 @@ authRouter.get('/:username', async (req, res) => {
             }
         });
     } catch (error) {
+        if (error instanceof jwt.JsonWebTokenError)
+            return res.status(401).end();
+
         console.log(error);
     }
 });

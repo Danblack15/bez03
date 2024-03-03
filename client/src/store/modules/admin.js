@@ -3,7 +3,7 @@ import Cookies from 'js-cookie';
 
 export const Admin = {
     state: () => ({
-        allUsers: [],
+        allUsers: null,
     }),
 
     getters: {
@@ -34,7 +34,7 @@ export const Admin = {
                     return;
                 }
 
-                commit('setAllUsers', JSON.parse(res.data.data));
+                commit('setAllUsers', await JSON.parse(res.data.data));
             } catch (error) {
                 console.log(error);
             }
@@ -49,7 +49,7 @@ export const Admin = {
                     }
                 }
                 
-                const res = await api.post(`admin/block/${userData[0]}?block=${!userData[1]}`, config);
+                const res = await api.post(`admin/block/${userData[0]}?block=${!userData[1]}`, {}, config);
 
                 if (res.data.status !== 'ok') {
                     return;
@@ -75,6 +75,25 @@ export const Admin = {
                 if (res.data.status !== 'ok') {
                     return;
                 }
+
+                dispatch('fetchAllUsers')
+            } catch (error) {
+                console.log(error);
+            }
+        },
+
+        async changeUserOption({ commit, dispatch }, newOptions) {
+            try {
+                let config = {
+                    headers: {
+                        "Content-Type": "application/json",
+                        'Authorization': `Bearer ${Cookies.get('token')}`,
+                    }
+                }
+                
+                const res = await api.post(`admin/passwordOption/${newOptions[1]}`, newOptions[0], config);
+
+                commit('setHint', res.data, { root: true });
 
                 dispatch('fetchAllUsers')
             } catch (error) {

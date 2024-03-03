@@ -33,10 +33,10 @@ export const Users = {
 
                 const res = await api.post('admin/changePass', userData, config);
 
-                if (res.data.status !== 'ok') {
-                    return;
-                }
+                commit('setHint', res.data, { root: true });
+
             } catch (error) {
+                commit('setHint', error.response.data, { root: true });
                 console.log(error);
             }
         },
@@ -55,7 +55,7 @@ export const Users = {
                 if (res.data.status !== 'ok') {
                     return;
                 }
-                
+
                 if (res.data.user?.block) {
                     Cookies.remove('account');
                     Cookies.remove('token');
@@ -65,6 +65,11 @@ export const Users = {
 
                 commit('setNewUserData', res.data.user);
             } catch (error) {
+                Cookies.remove('account');
+                Cookies.remove('token');
+
+                router.push('/');
+                
                 console.log(error);
             }
         },

@@ -3,23 +3,32 @@
         <button class="account__logout" @click="logout">Выйти</button>
         <div class="account__inner">
             <div class="reset-password">
-                <form @submit.prevent="changePassword(userData)" class="form-line">
+                <form @submit.prevent="validateChangePass" class="form-line">
                     <input 
                         type="password" 
                         name="oldPawword" 
                         placeholder="Старый пароль" 
                         v-model="userData.oldPassword" 
+                        class="large"
                     />
                     <input 
                         type="password" 
                         name="newPassword" 
                         placeholder="Новый пароль" 
                         v-model="userData.newPassword"
+                        required
+                    />
+                    <input 
+                        type="password" 
+                        name="newPasswordRepeat" 
+                        placeholder="Повторите пароль" 
+                        v-model="userData.repeatPassword"
+                        required
                     />
                     <button type="submit">Сменить</button>
                 </form>
             </div>
-            <section class="admin-panel" v-if="isAdmin">
+            <section class="admin-panel" v-if="getIsAdmin">
                 <form @submit.prevent="addUser(newUser)" class="form-line">
                     <input 
                         type="text" 
@@ -28,15 +37,9 @@
                         required
                         v-model="newUser.username" 
                     />
-                    <input 
-                        type="password" 
-                        name="password" 
-                        placeholder="Пароль" 
-                        v-model="newUser.password"
-                    />
                     <button type="submit">Добавить</button>
                 </form>
-                <div class="admin-panel__users">
+                <div class="admin-panel__users" v-if="allUsers">
                     <UserItem 
                         v-for="user in allUsers" 
                         :key="user.username"
@@ -44,6 +47,7 @@
                         :isAdmin="user.username == 'ADMIN'"
                     />
                 </div>
+                <h2 v-else>Загружаем пользователей..</h2>
             </section>
         </div>
     </div>
@@ -52,6 +56,7 @@
 <script>
 import { mapGetters, mapActions } from 'vuex';
 import UserItem from '@/components/UserItem.vue'
+import Cookies from 'js-cookie';
 
 export default {
     components: {
@@ -61,18 +66,23 @@ export default {
     data() {
         return {
             newUser: {
-                username: '',
-                password: ''
+                username: ''
             },
             userData: {
                 oldPassword: '',
-                newPassword: ''
-            }
+                newPassword: '',
+                repeatPassword: ''
+            },
+            isAdmin: false
         }
     },
 
-    mounted() {
-        if (this.isAdmin)
+    async mounted() {
+        let isAdminCookie = Cookies.get('account') ? await JSON.parse(Cookies.get('account')).username === 'ADMIN' : false;
+
+        this.isAdmin = isAdminCookie;
+
+        if (isAdminCookie)
             this.fetchAllUsers();
     },
 
@@ -82,14 +92,27 @@ export default {
             addUser: 'admin/addUser',
             logout: 'auth/logout',
             changePassword: 'users/changePassword',
-        })
+            setHint: 'setNewHint'
+        }),
+
+        validateChangePass() {
+            if (this.userData.newPassword === this.userData.repeatPassword)
+                this.changePassword(this.userData);
+            else {
+                // alert('Пароли не совпадают');
+                this.setHint('Пароли не совпадают');
+            }
+        }
     },
 
     computed: {
         ...mapGetters({
-            isAdmin: 'auth/getIsAdmin',
             allUsers: 'admin/getAllUsers',
-        })
+        }),
+
+        getIsAdmin() {
+            return this.isAdmin;
+        }
     }
 }
 </script>
@@ -147,6 +170,7 @@ export default {
 
 .form-line
     display: flex
+    flex-wrap: wrap
     grid-gap: 20px
     width: 100%
 
@@ -158,6 +182,8 @@ export default {
         border-radius: 15px
         flex-grow: 1
         font-weight: 600
+        &.large
+            width: 100%
 
         &::placeholder
             color: $white
